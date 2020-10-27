@@ -13,7 +13,7 @@ import static io.restassured.RestAssured.given;
 import static org.apache.http.HttpStatus.*;
 import static org.assertj.core.api.Assertions.*;
 
-public class GetResources extends BaseTest {
+public class GetResourcesTest extends BaseTest {
 
     @DisplayName("Get all people, vehicles and species")
     @ParameterizedTest(name = "resource: {0}")
@@ -59,10 +59,35 @@ public class GetResources extends BaseTest {
 
     }
 
+    @DisplayName("Get person, vehicle and species by search filtering")
+    @ParameterizedTest(name = "resource: {0}")
+    @MethodSource("getBySearchParamDataSource")
+    public void getResourceBySearchParam(String resource, String search, String name) {
+
+        Response response = given()
+                .spec(reqSpec)
+                .queryParam("search", search)
+                .when()
+                .get(BASE_URL + resource)
+                .then()
+                .statusCode(SC_OK)
+                .extract()
+                .response();
+
+        JsonPath jsonResponse = response.jsonPath();
+
+        List<String> namesList = jsonResponse.getList("results.name");
+
+        assertThat(namesList.get(0)).isEqualTo(name);
+
+    }
+
+
+
     private static Stream<Arguments> getDataSource() {
 
         return Stream.of(
-                Arguments.of("people", 82, "C-3PO"),
+                Arguments.of("people", 87, "C-3PO"),
                 Arguments.of("vehicles", 39, "T-16 skyhopper"),
                 Arguments.of("species", 37, "Droid")
         );
@@ -74,6 +99,15 @@ public class GetResources extends BaseTest {
                 Arguments.of("people", "C-3PO", 2),
                 Arguments.of("vehicles", "T-16 skyhopper", 6),
                 Arguments.of("species", "Droid", 2)
+        );
+    }
+
+    private static Stream<Arguments> getBySearchParamDataSource() {
+
+        return Stream.of(
+                Arguments.of("people", "vad", "Darth Vader" ),
+                Arguments.of("vehicles", "snow", "Snowspeeder"),
+                Arguments.of("species", "hum", "Human")
         );
     }
 
